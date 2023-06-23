@@ -30,7 +30,7 @@
 
     .chart {
       width: 800px;
-      height: 700px; /* Increase the height to accommodate the treemap */
+      height: 700px; 
       margin: 0 auto;
     }
   </style>
@@ -77,13 +77,13 @@
 
   <script>
     d3.csv("data.csv").then(function(data) {
-      console.log(data); // Check if the data is loaded correctly
+      console.log(data); 
 
       // Data preprocessing
       const nestedData = d3.group(data, d => d.District);
-      console.log(nestedData); // Check if the data is grouped correctly
+      console.log(nestedData); 
 
-      const districts = Array.from(nestedData.keys()); // Extract the district names
+      const districts = Array.from(nestedData.keys()); 
 
       // Add district options to the select element
       const districtSelect = d3.select("#district-select");
@@ -127,7 +127,7 @@
           }))
         };
 
-        // Compute the treemap layout
+        
         const rootHierarchy = d3.hierarchy(root)
           .sum(function(d) {
             return d.ecoli + d.ph + d.conductivity + d.turbidity;
@@ -136,7 +136,7 @@
             return b.value - a.value;
           })
           .each(function(d) {
-            d.name = d.data.name; // Assign district name to each node
+            d.name = d.data.name; 
           });
 
         treemap(rootHierarchy);
@@ -170,11 +170,11 @@
             return d.y1 - d.y0;
           })
           .attr("fill", function(d) {
-            const districtColor = districtColors(d.parent.data.name); // Assign a color based on district name
-            const gradientId = "gradient-" + d.parent.data.name.replace(/\s+/g, '-').toLowerCase(); // Generate a unique gradient id for each district
+            const districtColor = districtColors(d.parent.data.name); 
+            const gradientId = "gradient-" + d.parent.data.name.replace(/\s+/g, '-').toLowerCase(); 
             let gradient = d3.select(this).select("#" + gradientId);
         
-            // If the gradient for the district doesn't exist, create it
+            
             if (gradient.empty()) {
               const gradientData = [
                 { offset: "0%", color: "white" },
@@ -202,7 +202,7 @@
                 });
             }
         
-            return "url(#" + gradientId + ")"; // Apply the linear gradient
+            return "url(#" + gradientId + ")"; 
           })
           .attr("stroke", "white");
                 
