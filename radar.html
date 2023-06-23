@@ -121,7 +121,7 @@
       var districtOptions = Array.from(new Set(data.map(d => d.District)));
       var select = d3.select("#district-select");
 
-      // Log the array of districts to the console
+
       console.log("Districts:", districtOptions);
 
       select.selectAll("option")
@@ -183,14 +183,14 @@
             },
             polygons: {
               fill: {
-                colors: ['#AA4A44', '#2979FF', '#00C9A7', '#FFD60A'] // Specify different colors for each parameter
+                colors: ['#AA4A44', '#2979FF', '#00C9A7', '#FFD60A'] 
               }
             }
           }
         }
       };
 
-      // Remove existing chart
+     
       if (window.chart) {
         window.chart.destroy();
       }
@@ -215,10 +215,10 @@
         });
       }
 
-      // Process the filtered data here and return an array of objects with district, value, and color properties
+      
       return filteredData.map(function(d) {
         return {
-          district: d.District.substring(0, 3), // Truncate label to the first 3 characters
+          district: d.District.substring(0, 3), 
           value: +d[parameter]
         };
       });
