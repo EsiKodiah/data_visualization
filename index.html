@@ -136,7 +136,7 @@
       var parameter = d3.select("#parameter-select").node().value;
       currentParameter = parameter;
 
-      // Process the data
+      // Processing the data
       var processedData = processData(data, parameter);
 
       // Set up chart dimensions
@@ -144,7 +144,7 @@
       var width = 1000 - margin.left - margin.right;
       var height = 500 - margin.top - margin.bottom;
 
-      // Remove existing SVG element
+    
       d3.select("#bar-chart").select("svg").remove();
 
       // Create SVG element
@@ -205,7 +205,7 @@
       svg.append("g")
         .call(d3.axisLeft(yScale));
 
-      // Add constant line for the target value
+      
       var targetValue = getTargetValue(currentParameter);
       svg.append("line")
         .attr("class", "target-line")
@@ -234,7 +234,7 @@
 
     // Function to process the raw data
     function processData(data, parameter) {
-      // Process the data here and return an array of objects with district, value, and color properties
+      
       return data.map(function(d) {
         return {
           district: d.District,
@@ -265,7 +265,7 @@
     // Function to get the chart title based on the parameter
     function getChartTitle(parameter) {
       // Return the chart title based on the parameter
-      // Modify as needed
+      
       switch (parameter) {
         case "ecoli":
           return "Average Ecoli concentration in water bodies per district";
