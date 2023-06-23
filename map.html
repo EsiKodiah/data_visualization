@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Water Quality Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    /* Add your custom CSS styles here */
+    @import url(https://fonts.googleapis.com/css2?family=Comfortaa:wght@300);
+
+    body {
+      font-family: 'Helvetica', cursive;
+      background: linear-gradient(130deg, #97ea7e 5%, #95f593 80%);
+      /*font-family: Arial, sans-serif;*/
+      background-color: #e1f798;
+      margin: 0;
+      padding: 50px 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      cursor: pointer;
+    }
+
+    #map {
+      height: 600px;
+    }
+
+    .map-title {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Bar Chart</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="map.html">Map</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="scatter.html">Scatter Plot</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="radar.html">Radar Plot</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="treemap.html">Treemap</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Water Quality Dashboard</h1>
+    <div>
+      <label for="parameter-select">Select Parameter:</label>
+      <select id="parameter-select" onchange="updateMap()">
+        <option value="ecoli">Ecoli</option>
+        <option value="turbidity">Turbidity</option>
+        <option value="pH">pH</option>
+        <option value="sulphate">Sulphate</option>
+      </select>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+  <script>
+    // Global variables
+    var data;
+    var currentParameter = "ecoli";
+    var map;
+    var heatmapLayer;
+    var mapTitle;
+    var heatmapData;
+
+    // Initialize the map
+    function initMap() {
+      // Create the Leaflet map
+      map = L.map('map').setView([1.2, 32.3], 7);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+        maxZoom: 18,
+      }).addTo(map);
+    }
+
+    // Load data from data.csv and generate the map
+    d3.csv("data.csv").then(function (dataset) {
+      data = dataset;
+      initMap();
+      updateMap();
+    });
+
+    // Function to update the map based on the selected parameter
+    function updateMap() {
+      var parameter = d3.select("#parameter-select").node().value;
+      currentParameter = parameter;
+
+      // Process the data
+      processData(data, parameter).then(function (processedData) {
+        // Remove existing markers and heatmap layer
+        map.eachLayer(function (layer) {
+          if (layer instanceof L.Marker || layer instanceof L.CircleMarker || layer instanceof L.HeatLayer) {
+            map.removeLayer(layer);
+          }
+        });
+
+        // Remove existing map title
+        if (mapTitle) {
+          map.removeControl(mapTitle);
+        }
+
+        // Add markers to the map
+        var promises = processedData.map(function (d) {
+          if (d.latitude !== null && d.longitude !== null) {
+            var marker = L.marker([d.latitude, d.longitude]).addTo(map);
+            marker.bindPopup('<strong>' + d.village + '</strong><br>' + parameter + ': ' + d.value);
+          }
+        });
+
+        Promise.all(promises).then(function () {
+          // All markers have been added to the map
+
+          // Create an array of latlng values for the heatmap
+          heatmapData = processedData.map(function (d) {
+            if (d.latitude !== null && d.longitude !== null) {
+              return [parseFloat(d.latitude), parseFloat(d.longitude), d.value];
+            }
+          });
+
+          // Filter out null values
+          heatmapData = heatmapData.filter(function (d) {
+            return d !== undefined;
+          });
+
+          // Create the heatmap layer and add it to the map
+          heatmapLayer = L.heatLayer(heatmapData, { radius: 25, gradient: { 0.4: 'blue', 0.6: 'green', 1: 'red' } }).addTo(map);
+
+          // Add title to the map
+          var title = parameter.charAt(0).toUpperCase() + parameter.slice(1);
+          mapTitle = L.control({ position: 'topright' });
+          mapTitle.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'map-title');
+            div.innerHTML = '<h3>' + title + ' Quantity per Water Source</h3>';
+            return div;
+          };
+          mapTitle.addTo(map);
+        });
+      });
+    }
+
+    // Function to process the raw data
+    function processData(data, parameter) {
+      // Process the data here and return the processed data as an array of objects
+      return Promise.all(
+        data.map(async function (d) {
+          const village = d.village;
+          const latitude = parseFloat(d.Latitude);
+          const longitude = parseFloat(d.Longitude);
+          const value = +d[parameter];
+
+          if (isNaN(latitude) || isNaN(longitude)) {
+            // Skip data points with invalid coordinates
+            return null;
+          }
+
+          return { village, latitude, longitude, value };
+        })
+      ).then(function (processedData) {
+        // Filter out null values
+        return processedData.filter(function (d) {
+          return d !== null;
+        });
+      });
+    }
+
+
+  </script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
